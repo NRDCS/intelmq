@@ -32,6 +32,19 @@ class MISPParserBot(Bot):
         'ecsirt:other="blacklist"': 'blacklist',
         'ecsirt:other="unknown"': 'unknown',
         'ecsirt:test="test"': 'test',
+        'circl:incident-classification="XSS"': 'ids alert',
+        'circl:incident-classification="denial-of-service"': 'ddos',
+        'circl:incident-classification="fastflux"': 'malware configuration',
+        'circl:incident-classification="information-leak"': 'leak',
+        'circl:incident-classification="malware"': 'malware',
+        'circl:incident-classification="phishing"': 'phishing',
+        'circl:incident-classification="scam"': 'phishing',
+        'circl:incident-classification="scan"': 'scanner',
+        'circl:incident-classification="spam"': 'spam',
+        'circl:incident-classification="sql-injection"': 'ids alert',
+        'circl:incident-classification="system-compromise"': 'compromised',
+        'circl:incident-classification="vulnerability"': 'vulnerable service',
+
     }
 
     # Event categories we process
