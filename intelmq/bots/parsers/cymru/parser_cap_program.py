@@ -11,13 +11,15 @@ class CymruCAPProgramParserBot(ParserBot):
         for line in lines:
             line = line.strip()
             if line.startswith('#'):
-                self.tempdata.append(line)
+                #self.tempdata.append(line)
+                continue
             else:
                 yield line
 
     def parse_line(self, line, report):
         report_type, ip, asn, timestamp, comments, asn_name = line.split('|')
-        comment_split = comments.split(' ')
+        comment_split = comments.strip(';').split(' ')
+        comment1_split = comments.strip(';').split(';')
         event = self.new_event(report)
 
         event.add('source.ip', ip)
@@ -157,6 +159,90 @@ class CymruCAPProgramParserBot(ParserBot):
             event.add('classification.identifier', report_type)
             event.add('malware.name', report_type)
             event['extra.source_port'] = int(comment_split[1])
+        #######################################################################
+        # new report formats: bot, controller, darknet, honeypot
+        elif report_type == 'bot':
+            #bot|192.0.2.1|ASN|YYYY-MM-DD HH:MM:SS|family: Conficker;port: 3194;|ASNAME
+            #bot|192.0.2.1|ASN|YYYY-MM-DD HH:MM:SS|family: Cutwail;Cutwail Bot;|ASNAME
+            #bot|192.0.2.1|ASN|YYYY-MM-DD HH:MM:SS|family: treasurehunt;dest_addr: 192.0.2.1; dest_port: 80;port: 62167;protocol: 6;|ASNAME
+            event.add('classification.type', 'botnet drone')
+            for comment in comment1_split:
+                entry = comment.split(':')
+                if len(entry) != 2:
+                    continue
+                elif entry[0] == 'port':
+                    if entry[1].strip().isdigit():
+                        event['extra.source_port'] = event['source.port'] = int(entry[1])
+                    else:
+                        event['extra.source_port'] = entry[1]
+                elif entry[0] == 'dest_port':
+                    if entry[1].strip().isdigit():
+                        event['extra.dest_port'] = event['destination.port'] = int(entry[1])
+                    else:
+                        event['extra.dest_port'] = entry[1]
+                elif entry[0] == 'dest_addr':
+                    event['destination.ip'] = entry[1].strip()
+                elif entry[0] == 'family':
+                    event['classification.identifier'] = event['malware.name'] = entry[1].strip().lower()
+                elif entry[0] == 'protocol' and entry[1].strip() == 6:
+                    event['protocol.transport'] = "tcp"
+        elif report_type == 'controller':
+            #controller|192.0.2.1|ASN|YYYY-MM-DD HH:MM:SS|family: http_post;hostname: xxx.yyy.com;port: 80;|ASNAME
+            #controller|192.0.2.1|ASN|YYYY-MM-DD HH:MM:SS|family: azorult;port: 80;protocol: 6;|ASNAME
+            event.add('classification.type', 'c&c')
+            for comment in comment1_split:
+                entry = comment.split(':')
+                if len(entry) != 2:
+                    continue
+                elif entry[0] == 'port':
+                    if entry[1].strip().isdigit():
+                        event['extra.source_port'] = event['source.port'] = int(entry[1])
+                    else:
+                        event['extra.source_port'] = entry[1]
+                elif entry[0] == 'hostname':
+                    event['source.fqdn'] = entry[1].strip()
+                elif entry[0] == 'family':
+                    event['classification.identifier'] = event['malware.name'] = entry[1].strip().lower()
+                elif entry[0] == 'protocol' and entry[1].strip() == 6:
+                    event['protocol.transport'] = "tcp"
+        elif report_type == 'darknet':
+            #darknet|192.0.0.1|ASN|YYYY-MM-DD HH:MM:SS|darknet_port: 23;port: 38592;protocol: 6;|ASNAME
+            event.add('classification.type', 'scanner')
+            for comment in comment1_split:
+                entry = comment.split(':')
+                if len(entry) != 2:
+                    continue
+                elif entry[0] == 'port':
+                    if entry[1].strip().isdigit():
+                        event['extra.source_port'] = event['source.port'] = int(entry[1])
+                    else:
+                        event['extra.source_port'] = entry[1]
+                if entry[0] == 'darknet_port':
+                    if entry[1].strip().isdigit():
+                        event['extra.dest_port'] = event['destination.port'] = int(entry[1])
+                    else:
+                        event['extra.dest_port'] = entry[1]
+                elif entry[0] == 'protocol' and entry[1].strip() == '6':
+                    event['protocol.transport'] = "tcp"
+        elif report_type == 'honeypot':
+            #darknet|192.0.0.1|ASN|YYYY-MM-DD HH:MM:SS|honeypot_port: 445;port: 65333;protocol: 6;|ASNAME
+            event.add('classification.type', 'scanner')
+            for comment in comment1_split:
+                entry = comment.split(':')
+                if len(entry) != 2:
+                    continue
+                elif entry[0] == 'port':
+                    if entry[1].strip().isdigit():
+                        event['extra.source_port'] = event['source.port'] = int(entry[1])
+                    else:
+                        event['extra.source_port'] = entry[1]
+                if entry[0] == 'honeypot_port':
+                    if entry[1].strip().isdigit():
+                        event['extra.dest_port'] = event['destination.port'] = int(entry[1])
+                    else:
+                        event['extra.dest_port'] = entry[1]
+                elif entry[0] == 'protocol' and entry[1].strip() == '6':
+                    event['protocol.transport'] = "tcp"
         else:
             raise ValueError('Unknown report %r.', report_type)
         yield event
