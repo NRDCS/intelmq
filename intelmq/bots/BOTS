@@ -31,7 +31,26 @@
                 "subject_regex": "<subject>"
             }
         },
-        "Generic Mail URL Fetcher": {
+
+    "Generic PGP Mail Attachment Fetcher": {
+            "description": "Monitor IMAP mailboxes and retrieve mail attachments",
+            "module": "intelmq.bots.collectors.mail.collector_pgp_mail_attach",
+            "parameters": {
+                "attach_regex": ".gpg",
+                "attach_unzip": true,
+                "feed": "",
+                "provider": "",
+                "folder": "INBOX",
+                "mail_host": "<host>",
+                "mail_password": "<password>",
+                "mail_ssl": true,
+                "mail_user": "<user>",
+                "rate_limit": 60,
+                "subject_regex": "<subject>"
+            }
+        },        
+
+    "Generic Mail URL Fetcher": {
             "description": "Monitor IMAP mailboxes and fetch files from URLs contained in mail bodies",
             "module": "intelmq.bots.collectors.mail.collector_mail_url",
             "parameters": {
@@ -52,6 +71,23 @@
                 "ssl_client_certificate": null
             }
         },
+        "Generic Mail Body Fetcher": {
+            "description": "Monitor IMAP mailboxes and fetch lines from body matching pattern",
+            "module": "intelmq.bots.collectors.mail.collector_mail_body_fetch",
+            "parameters": {
+                "feed": "",
+                "provider": "",
+                "folder": "INBOX",
+                "mail_host": "<host>",
+                "mail_password": "<password>",
+                "mail_ssl": true,
+                "mail_user": "<user>",
+                "rate_limit": 60,
+                "subject_regex": "<subject>",
+                "line_regex": "<regex>"
+            }
+        },
+
         "Generic URL Fetcher": {
             "description": "Generic URL Fetcher is the bot responsible to get the report from an URL.",
             "module": "intelmq.bots.collectors.http.collector_http",
@@ -119,6 +155,27 @@
                 "http_username": null,
                 "http_password": null,
                 "ssl_client_certificate": null
+            }
+        },
+        "Request Tracker Ticket": {
+            "description": "Request Tracker Ticket Collector fetches Ticket data from RT instance.",
+            "module": "intelmq.bots.collectors.rt.collector_rt_ticket",
+            "parameters": {
+                "feed": "Request Tracker Ticket",
+                "provider": "",
+                "password": "password",
+                "search_not_older_than": null,
+                "search_owner": "nobody",
+                "search_requestor": null,
+                "search_subject_like": "Report",
+                "search_queue": "IntelMQ",
+                "search_status": "ready",
+                "set_status": "finished",
+                "uri": "http://localhost/rt/REST/1.0",
+                "user": "intelmq",
+                "verify_cert": true,
+                "set_customfield": null,
+                "set_customfield_value": null
             }
         },
         "XMPP": {
@@ -189,6 +246,49 @@
                 "ssl_client_certificate": "<insert path to client cert file for CERT.pl's n6>",
                 "ssl_client_certificate_key": "<insert path to client cert key file for CERT.pl's n6>"
             }
+        },
+        "Vxstream Sandbox Collector": {
+            "description": "VxStream Sandbox Report Collector",
+            "module": "intelmq.bots.collectors.vxstream.collector",
+            "parameters": {
+                "feed": "vxstream_generic",
+                "provider": "<VxStream>",
+                "days": "<number of days to request>",
+                "minimum_threatscore": "<0-100>",
+                "sandbox_api_key": "<sandbox api key>",
+                "sandbox_api_secret":  "<sandbox api secret>",
+                "sandbox_url": "<sandbox URL>",
+                "conf_file": "<search configuration file>",
+                "rate_limit": 3600
+            }
+        },
+        "TPOT Honeypot Collector": {
+            "description": "T-POT Honeypot Report Collector",
+            "module": "intelmq.bots.collectors.tpothoneypot.collector",
+            "parameters": {
+                "feed": "tpothoneypot_generic",
+                "provider": "<T-POT Honeypot>",
+                "query_file": "<ELK query file>",
+                "honeypot_count": "<default 1>",
+                "period_to_query": "<default 24>",
+                "connection_value_sum": "<default 1>",
+                "classification": "<default scanner>",
+                "rate_limit": 3600
+            }
+        },
+        "Honeypot Alert": {
+            "description": "T-POT Honeypot Alerter",
+            "module": "intelmq.bots.collectors.tpothoneypot.collector_alert",
+            "parameters": {
+                "feed": "tpothoneypot_generic",
+                "provider": "<T-POT Honeypot>",
+                "query_file": "<ELK query file>",
+                "baseline_time": "<default 24>",
+                "check_time": "<default 1>",
+                "check_rate": "<default 1>",
+                "classification": "<default scanner>",
+                "rate_limit": 3600
+            }
         }
     },
     "Parser": {
@@ -217,6 +317,11 @@
             "module": "intelmq.bots.parsers.alienvault.parser_otx",
             "parameters": {}
         },
+        "AntiDDoS": {
+            "description": "AntiDDoS events Parser is the bot responsible to parse AntiDDoS events",
+            "module": "intelmq.bots.parsers.antiddos.parser",
+            "parameters": {}
+        },
         "Autoshun": {
             "description": "Autoshun Parser is the bot responsible to parse the report and sanitize the information.",
             "module": "intelmq.bots.parsers.autoshun.parser",
@@ -242,6 +347,11 @@
             "module": "intelmq.bots.parsers.blocklistde.parser",
             "parameters": {}
         },
+        "Blocklist.de report": {
+            "description": "Parser responsible for blocklist.de report parsing",
+            "module": "intelmq.bots.parsers.blocklistde.report_parser",
+            "parameters": {}
+        },
         "Blueliv Crimeserver": {
             "description": "Blueliv Crimeserver Parser is the bot responsible to parse the report and sanitize the information.",
             "module": "intelmq.bots.parsers.blueliv.parser_crimeserver",
@@ -255,6 +365,16 @@
         "CleanMX": {
             "description": "CleanMX Parser is the bot responsible to parse the report and sanitize the information.",
             "module": "intelmq.bots.parsers.cleanmx.parser",
+            "parameters": {}
+        },
+        "CleanMXPhishWatch": {
+            "description": "CleanMXPhishWatch Parser is the bot responsible to parse the CleanMX PhishWatch report.",
+            "module": "intelmq.bots.parsers.cleanmx.parser_phishwatch",
+            "parameters": {}
+        },
+        "CleanMXVirusWatch": {
+            "description": "CleanMXVirusWatch Parser is the bot responsible to parse the CleanMX VirusWatch report.",
+            "module": "intelmq.bots.parsers.cleanmx.parser_viruswatch",
             "parameters": {}
         },
         "Cymru Full Bogons": {
@@ -295,6 +415,16 @@
         "DynDNS ponmocup Domains": {
             "description": "Dyn Parser is the bot responsible to parse the report and sanitize the information.",
             "module": "intelmq.bots.parsers.dyn.parser",
+            "parameters": {}
+        },
+        "ESET malware URLs": {
+            "description": "ESET malware URLs parser takes JSON attachment comming from ESET report.",
+            "module": "intelmq.bots.parsers.eset_malicious_urls.parser",
+            "parameters": {}
+    },
+        "Forti": {
+            "description": "Forti Parser is the bot responsible to parse Fortigate firewall logs.",
+            "module": "intelmq.bots.parsers.forti.parser",
             "parameters": {}
         },
         "Fraunhofer DGA": {
@@ -395,6 +525,20 @@
             "module": "intelmq.bots.parsers.phishtank.parser",
             "parameters": {}
         },
+        "Request Tracker Ticket": {
+            "description": "Request Tracker Ticket Parser is the bot responsible to parse the report of Request Tracker Ticket data",
+            "module": "intelmq.bots.parsers.rt.parser",
+            "parameters": {
+                "fields_to_collect": null 
+            }
+        },
+        "Request Tracker Ticket plain": {
+            "description": "Request Tracker Ticket Parser is the bot responsible to parse the report of Request Tracker Ticket data. Parser generates single event from the message.",
+            "module": "intelmq.bots.parsers.rt.parser_plain",
+            "parameters": {
+                "fields_to_collect": null 
+            }
+        },
         "ShadowServer": {
             "description": "ShadowServer Parser is a bot capable of parsing all shadowserver feeds, depending on configuration files. Parameter 'feedname' is used as identifier to chose the correct mapping.",
             "module": "intelmq.bots.parsers.shadowserver.parser",
@@ -402,6 +546,11 @@
                 "feedname": "",
                 "overwrite": true
             }
+        },
+        "SonicWall": {
+            "description": "SonicWall Parser is the bot responsible to parse SonicWall firewall logs.",
+            "module": "intelmq.bots.parsers.sonicwall.parser",
+            "parameters": {}
         },
         "Spamhaus CERT": {
             "description": "Spamhaus CERT Parser is the bot responsible to parse the report and sanitize the information.",
@@ -449,6 +598,14 @@
             "description": "ZoneH CSV report parser",
             "module": "intelmq.bots.parsers.zoneh.parser",
             "parameters": {}
+        },
+        "Vxstream Sandbox Parser": {
+            "description": "vxstream report parser",
+            "module": "intelmq.bots.parsers.vxstream.parser",
+            "parameters": {
+                "classification": "malware configuration",
+                "activity": "<network|sandbox>"
+            }
         }
     },
     "Expert": {
@@ -629,6 +786,15 @@
             "parameters": {
                 "overwrite": false
             }
+        },
+        "organization": {
+            "description": "Bot will add organization name, sector and ID.",
+            "module": "intelmq.bots.experts.organization.expert",
+            "parameters": {
+                "api_url": "",
+                "api_user": "",
+                "api_pass": ""
+            }
         }
     },
     "Output": {
@@ -738,6 +904,17 @@
                 "redis_timeout": 50000
             }
         },
+        "Request Tracker": {
+            "description": "Request Tracker ticket creation bot.",
+            "module": "intelmq.bots.outputs.rt.output",
+            "parameters": {
+                "uri": "http://localhost/rt/REST/1.0",
+                "verify_cert": true,
+                "user": "apiuser",
+                "password": "<password>",
+                "queue": "Incidents"
+            }
+        },
         "SMTP": {
             "description": "Sends single events via SMTP.",
             "module": "intelmq.bots.outputs.smtp.output",
@@ -805,6 +982,15 @@
                 "xmpp_room_nick": null,
                 "xmpp_room_password": null,
                 "use_muc": false
+            }
+        },
+        "MISP": {
+            "description": "MISP is the bot responsible to send events to a MISP server.",
+            "module": "intelmq.bots.outputs.misp.output",
+            "parameters": {
+                "misp_api_key": "<MISP API key>",
+                "misp_url": "<MISP API URL>",
+                "tags": "<A list of MISP tags>"
             }
         }
     }
