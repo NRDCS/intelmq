@@ -49,6 +49,7 @@ def get_feed(feedname, logger):
     feed_idx = {
         "Accessible-Cisco-Smart-Install": accessible_cisco_smart_install,
         "Accessible-CWMP": accessible_cwmp,
+		"Accessible-Hadoop": accessible_hadoop,
         "Accessible-RDP": accessible_rdp,
         "Accessible-SMB": accessible_smb,
         "Accessible-Telnet": accessible_telnet,
@@ -84,6 +85,7 @@ def get_feed(feedname, logger):
         "SSL-FREAK-Vulnerable-Servers": ssl_freak_vulnerable_servers,  # Only differs in a few extra fields
         "SSL-POODLE-Vulnerable-Servers": ssl_poodle_vulnerable_servers,
         "Vulnerable-ISAKMP": vulnerable_isakmp,
+		"Botnet-CCIP": botnet_ccip,
     }
     old_feed_idx = {
         "Botnet-Drone-Hadoop": drone,
@@ -187,7 +189,64 @@ def validate_fqdn(value):
     if harmonization.FQDN.is_valid(value, sanitize=True):
         return value
 
-
+# http://www.shadowserver.org/wiki/pmwiki.php/Services/Botnet-CCIP
+botnet_ccip = {
+    'required_fields': [
+        ('time.source', 'first_seen', add_UTC_to_timestamp),
+        ('source.ip', 'ip'),
+        ('source.port', 'port'),
+    ],
+    'optional_fields': [
+        ('source.asn', 'asn'),
+		('source.as_name', 'as_name'),
+        ('source.geolocation.cc', 'geo'),
+        ('source.geolocation.region', 'region'),
+        ('source.geolocation.city', 'city'),
+		('extra.', 'as_desc', validate_to_none),
+		('source.fqdn', 'domain', validate_to_none),
+		('extra.', 'channel', validate_to_none),
+    ],
+    'constant_fields': {
+        'classification.type': 'c&c',
+        'classification.taxonomy': 'malicious code',
+        'classification.identifier': 'c&c',
+    }
+}	
+		
+		
+# https://www.shadowserver.org/wiki/pmwiki.php/Services/Accessible-Hadoop
+accessible_hadoop = {
+    'required_fields': [
+        ('time.source', 'timestamp', add_UTC_to_timestamp),
+        ('source.ip', 'ip'),
+        ('source.port', 'port'),
+    ],
+    'optional_fields': [
+        ('source.reverse_dns', 'hostname'),
+        ('source.asn', 'asn'),
+        ('source.geolocation.cc', 'geo'),
+        ('source.geolocation.region', 'region'),
+        ('source.geolocation.city', 'city'),
+        ('extra.', 'naics', invalidate_zero),
+        ('extra.', 'sic', invalidate_zero),
+        ('extra.', 'server_type', validate_to_none),
+        ('extra.', 'clusterid', validate_to_none),
+        ('extra.', 'total_disk', validate_to_none),
+        ('extra.', 'used_disk', validate_to_none),
+        ('extra.', 'free_disk', validate_to_none),
+        ('extra.', 'livenodes', validate_to_none),
+        ('extra.', 'namenodeaddress', validate_to_none),
+        ('extra.', 'volumeinfo', validate_to_none),
+    ],
+    'constant_fields': {
+        'protocol.transport': 'TCP',
+        'protocol.application': 'hadoop',
+        'classification.type': 'vulnerable service',
+        'classification.taxonomy': 'vulnerable',
+        'classification.identifier': 'open-hadoop',
+    }
+}		
+		
 # https://www.shadowserver.org/wiki/pmwiki.php/Services/Open-mDNS
 open_mdns = {
     'required_fields': [
