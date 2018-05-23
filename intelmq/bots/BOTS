@@ -266,6 +266,7 @@
             "description": "T-POT Honeypot Report Collector",
             "module": "intelmq.bots.collectors.tpothoneypot.collector",
             "parameters": {
+                "elk_url": "<ELK API URL>",
                 "feed": "tpothoneypot_generic",
                 "provider": "<T-POT Honeypot>",
                 "query_file": "<ELK query file>",
@@ -280,6 +281,7 @@
             "description": "T-POT Honeypot Alerter",
             "module": "intelmq.bots.collectors.tpothoneypot.collector_alert",
             "parameters": {
+                "elk_url": "<ELK API URL>",
                 "feed": "tpothoneypot_generic",
                 "provider": "<T-POT Honeypot>",
                 "query_file": "<ELK query file>",

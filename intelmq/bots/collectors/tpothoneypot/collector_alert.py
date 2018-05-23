@@ -21,7 +21,7 @@ class HoneypotAlertBot(CollectorBot):
 
     def sensor_statistics(self, elk_query):
         sensor_stats = {}
-        elk_url = 'http://10.10.100.238:9200/_search'
+        elk_url = self.parameters.elk_url
         headers = {'Content-Type': 'application/json'}
         response = requests.get(elk_url, data=json.dumps(elk_query), headers=headers, verify=False)
         if response.status_code == 200 and 'took' in response.text:
@@ -30,12 +30,12 @@ class HoneypotAlertBot(CollectorBot):
             for item in report['aggregations'][aggs]['buckets']:
                 for key, value in item.items():
                     if type(value) == dict:
-                        if value['buckets']:
+                        if value['buckets']: # Check if bucket has values
                             for attr in value['buckets']:
                                 if attr['key'] in sensor_stats:
-                                    sensor_stats[attr['key']] += attr['doc_count']
+                                    sensor_stats[attr['key']] += attr['doc_count'] # Adding values if its a known sensor
                                 else:
-                                    sensor_stats[attr['key']] = attr['doc_count']
+                                    sensor_stats[attr['key']] = attr['doc_count'] # Starting a counter for previously not observed sensor
             return sensor_stats
         else:
             self.logger.error(response.text)

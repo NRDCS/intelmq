@@ -5,6 +5,7 @@ T-POT honeypot report collector bot
 Queries ElasticSearch to get events from T-POT honeypots.
 
 Parameters:
+    elk_url: string
     query_file: string
     period_to_query: int
     honeypot_count: int
@@ -19,15 +20,16 @@ from intelmq.lib.bot import CollectorBot
 class HoneypotCollectorBot(CollectorBot):
 
     def process(self):
+        elk_url = self.parameters.elk_url
         query_file = self.parameters.query_file
         period_to_query = self.parameters.period_to_query
         honeypot_count = self.parameters.honeypot_count
         connection_value_sum = self.parameters.connection_value_sum
         classification = self.parameters.classification
 
-        elk_url = 'http://10.10.100.238:9200/_search'
         headers = {'Content-Type': 'application/json'}
 
+        # Adding period_to_query value as a timestamp value into ELK query
         elk_query = json.load(open(query_file))
         for item in elk_query['query']['bool']['must']:
             if 'range' in item:
@@ -43,6 +45,7 @@ class HoneypotCollectorBot(CollectorBot):
             for item in honeypot_report['aggregations'][aggs]['buckets']:
                 for key, value in item.items():
                     if type(value) == dict:
+                        # Checking if bucket values matches search criteria
                         if len(value.get('buckets')) >= honeypot_count and item.get('doc_count') >= connection_value_sum:
                             line = {}
                             line.update({'source.ip': item.get('key')})
