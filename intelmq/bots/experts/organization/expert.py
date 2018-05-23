@@ -25,6 +25,7 @@ class OrganizationExpertBot(Bot):
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
         event = self.receive_message()
+        # If organisation name exists - adds sector and ID
         if 'destination.organization.name' in event and 'destination.organization.sector' not in event:
             req_body = {'with_deleted': True, 'search': str(event['destination.organization.name']), 'user_name': api_user, 'password': api_pass}
             response = requests.post(api_url + '/api/organisations-search', data=json.dumps(req_body), headers=headers, verify=False)
@@ -42,13 +43,15 @@ class OrganizationExpertBot(Bot):
                 for line in by_name['data']:
                     event.add('source.organization.sector', line['sector_type']['name'])
                     event.add('source.organization.id', line['public_id'])
-                
+
+        # If IP is only value, then queries to get organisation ID
         if 'destination.ip' in event and 'destination.organization.name' not in event and 'destination.organization.sector' not in event:
             req_body = {'user_name': api_user, 'password': api_pass}
             response = requests.post(api_url + '/api/organisations-search/by-ip/' + str(event['destination.ip']), data=json.dumps(req_body), headers=headers, verify=False)
             by_ip = response.json()
             if 'message' not in by_ip:
                 org_id = by_ip['data']['id']
+                # Query to get organisation name and sector using organisation ID
                 response = requests.post(api_url + '/api/organisations/' + str(org_id), data=json.dumps(req_body), headers=headers, verify=False)
                 data = response.json()
                 if 'message' not in data:
