@@ -34,7 +34,12 @@ class MISPOutputBot(Bot):
     def process(self):
         misp_api_key = self.parameters.misp_api_key  # MISP API key
         misp_url = self.parameters.misp_url  # MISP URL
-        tags = self.parameters.tags  # List of MISP tags
+        misp_tags = self.parameters.tags  # List of MISP tags
+
+        tags = []
+        if misp_tags:
+            tags = [t.strip() for t in misp_tags.split(',')]
+
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': misp_api_key}
 
         data = self.receive_message()
