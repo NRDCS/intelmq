@@ -71,11 +71,17 @@ class RTOutputBot(Bot):
             raise ValueError('Login failed.')          
         kwargs = {}
         # we make subject in form of "Incident: IP"
-        subject = 'incident: ' + event['source.ip']
+        subject = 'incident';
+        if event.get('feed.provider'):
+            subject += ", " + event['feed.provider']
+        if event.get('feed.name'):
+            subject += ":" + event['feed.name']
+        if event.get('source.ip'):
+            subject += ": " + event['source.ip']
         content = ""
         classification = ""
         incident_type = ""
-        if event['classification.type']:
+        if event.get('classification.type'):
             classification, incident_type = self.Type_mapping[event['classification.type']]
             self.logger.debug("Classification assigned: %s, %s", classification, incident_type)
             kwargs["CF_Classification"] = classification
