@@ -49,13 +49,14 @@ def get_feed(feedname, logger):
     feed_idx = {
         "Accessible-Cisco-Smart-Install": accessible_cisco_smart_install,
         "Accessible-CWMP": accessible_cwmp,
-		"Accessible-Hadoop": accessible_hadoop,
+        "Accessible-Hadoop": accessible_hadoop,
         "Accessible-RDP": accessible_rdp,
         "Accessible-SMB": accessible_smb,
         "Accessible-Telnet": accessible_telnet,
         "Accessible-VNC": accessible_vnc,
         "Blacklisted-IP": blacklisted_ip,
         "Compromised-Website": compromised_website,
+        "Drone-Brute-Force": drone_brute_force,
         "Drone": drone,
         "DNS-Open-Resolvers": dns_open_resolvers,
         "Microsoft-Sinkhole": microsoft_sinkhole,
@@ -63,6 +64,7 @@ def get_feed(feedname, logger):
         "NTP-Version": ntp_version,
         "Open-Chargen": open_chargen,
         "Open-Elasticsearch": open_elasticsearch,
+        "Open-HTTP": open_http,
         "Open-IPMI": open_ipmi,
         "Open-LDAP": open_ldap,
         "Open-mDNS": open_mdns,
@@ -81,11 +83,12 @@ def get_feed(feedname, logger):
         "Open-XDMCP": open_xdmcp,
         "Sandbox-URL": sandbox_url,
         "Sinkhole-HTTP-Drone": sinkhole_http_drone,
+        "IPv6-Sinkhole-HTTP-Drone": ipv6_sinkhole_http_drone,
         "Spam-URL": spam_url,
         "SSL-FREAK-Vulnerable-Servers": ssl_freak_vulnerable_servers,  # Only differs in a few extra fields
         "SSL-POODLE-Vulnerable-Servers": ssl_poodle_vulnerable_servers,
         "Vulnerable-ISAKMP": vulnerable_isakmp,
-		"Botnet-CCIP": botnet_ccip,
+        "Botnet-CCIP": botnet_ccip,
     }
     old_feed_idx = {
         "Botnet-Drone-Hadoop": drone,
@@ -160,7 +163,46 @@ def convert_httphost_and_url(value, row):
         return 'http://' + row['http_host'] + row['url']
     return value
 
+def convert_http_host_and_url(value, row):
+    """
+    URLs are split into hostname and path. The column names differ in reports.
+    Compromised-Website: http_host, url
+    Drone: cc_dns, url
+    IPv6-Sinkhole-HTTP-Drone: http_host, http_url
+    Microsoft-Sinkhole: http_host, url
+    Sinkhole-HTTP-Drone: http_host, url
+    With some reports, url/http_url holds only the path, with others the full HTTP request.
+    """
+    hostname = ""
+    if "cc_dns" in row:
+        if row['cc_dns']:
+            hostname = row['cc_dns']
+    elif "http_host" in row:
+        if row['http_host']:
+            hostname = row['http_host']
 
+    if "url" in row:
+        path = row.get('url', '')
+    elif "http_url" in row:
+        path = row.get('http_url', '')
+    else:
+        path = ''
+
+    if hostname and path:
+        # remove potential leading/trailing HTTP request information
+        path = re.sub(r'^[^/]*', '', path)
+        path = re.sub(r'\s.*$', '', path)
+
+        application = "http"
+        if "application" in row:
+            if row['application'] in ['http', 'https']:
+                application = row['application']
+
+        return application + "://" + hostname + path
+
+    return value
+
+	
 def invalidate_zero(value):
     """ Returns an int or None for empty strings or '0'. """
     if not value:
@@ -198,22 +240,22 @@ botnet_ccip = {
     ],
     'optional_fields': [
         ('source.asn', 'asn'),
-		('source.as_name', 'as_name'),
+        ('source.as_name', 'as_name'),
         ('source.geolocation.cc', 'geo'),
         ('source.geolocation.region', 'region'),
         ('source.geolocation.city', 'city'),
-		('extra.', 'as_desc', validate_to_none),
-		('source.fqdn', 'domain', validate_to_none),
-		('extra.', 'channel', validate_to_none),
+        ('extra.', 'as_desc', validate_to_none),
+        ('source.fqdn', 'domain', validate_to_none),
+        ('extra.', 'channel', validate_to_none),
     ],
     'constant_fields': {
         'classification.type': 'c&c',
         'classification.taxonomy': 'malicious code',
         'classification.identifier': 'c&c',
     }
-}	
-		
-		
+}   
+        
+        
 # https://www.shadowserver.org/wiki/pmwiki.php/Services/Accessible-Hadoop
 accessible_hadoop = {
     'required_fields': [
@@ -245,8 +287,8 @@ accessible_hadoop = {
         'classification.taxonomy': 'vulnerable',
         'classification.identifier': 'open-hadoop',
     }
-}		
-		
+}       
+        
 # https://www.shadowserver.org/wiki/pmwiki.php/Services/Open-mDNS
 open_mdns = {
     'required_fields': [
@@ -386,6 +428,47 @@ sinkhole_http_drone = {
         'classification.type': 'botnet drone',
         'classification.taxonomy': 'malicious code',
         'classification.identifier': 'infected system',
+    },
+}
+
+# https://www.shadowserver.org/wiki/pmwiki.php/Services/Sinkhole6-HTTP-Drone
+ipv6_sinkhole_http_drone = {
+    'required_fields': [
+        ('time.source', 'timestamp', add_UTC_to_timestamp),
+        ('source.ip', 'src_ip'),
+        ('source.port', 'src_port')
+    ],
+    'optional_fields': [
+        ('source.asn', 'src_asn'),
+        ('source.geolocation.cc', 'src_geo'),
+        ('source.geolocation.region', 'src_region'),
+        ('destination.ip', 'dst_ip', validate_ip),
+        ('destination.asn', 'dst_asn'),
+        ('destination.geolocation.cc', 'dst_geo'),
+        ('destination.geolocation.region', 'dst_region'),
+        ('destination.port', 'dst_port'),
+        ('protocol.transport', 'protocol'),
+        ('malware.name', 'tag'),
+        ('source.reverse_dns', 'hostname'),
+        ('extra.', 'sysdesc', validate_to_none),
+        ('extra.', 'sysname', validate_to_none),
+        ('destination.url', 'http_url', convert_http_host_and_url, True),
+        ('extra.', 'http_agent', validate_to_none),
+        ('destination.fqdn', 'http_host'),
+        ('extra.', 'http_referer', validate_to_none),
+        ('extra.', 'http_referer_ip', validate_to_none),
+        ('extra.', 'http_referer_asn', validate_to_none),
+        ('extra.', 'http_referer_geo', validate_to_none),
+        ('extra.', 'http_referer_region', validate_to_none),
+        ('extra.', 'forwarded_by', validate_to_none),
+    ],
+    'constant_fields': {
+        'classification.taxonomy': 'malicious code',
+        'classification.type': 'infected system',
+        # classification.identifier will be set to (harmonized) malware name by modify expert
+        # The feed does not include explicit information on the protocol
+        # but since it is about HTTP the protocol is always set to 'tcp'.
+        'protocol.transport': 'tcp',
     },
 }
 
@@ -1458,5 +1541,82 @@ accessible_cisco_smart_install = {
         'protocol.application': 'cisco-smart-install',
         'classification.type': 'vulnerable service',
         'classification.identifier': 'accessible-cisco-smart-install',
+    }
+}
+
+# https://www.shadowserver.org/wiki/pmwiki.php/Services/Drone-BruteForce
+drone_brute_force = {
+    'required_fields': [
+        ('time.source', 'timestamp', add_UTC_to_timestamp),
+        ('source.ip', 'ip'),
+        ('source.port', 'port'),
+    ],
+    'optional_fields': [
+        ('source.asn', 'asn'),
+        ('source.geolocation.cc', 'geo'),
+        ('source.geolocation.region', 'region'),
+        ('source.geolocation.city', 'city'),
+        ('source.reverse_dns', 'hostname'),
+        ('destination.ip', 'dest_ip', validate_ip),
+        ('destination.port', 'dest_port'),
+        ('destination.asn', 'dest_asn'),
+        ('destination.geolocation.cc', 'dest_geo'),
+        ('destination.fqdn', 'dest_dns'),
+        ('protocol.application', 'service'),
+        ('classification.identifier', 'service'),
+        ('extra.', 'naics', invalidate_zero),
+        ('extra.', 'sic', invalidate_zero),
+        ('extra.destination.naics', 'dest_naics', invalidate_zero),
+        ('extra.destination.sic', 'dest_sic', invalidate_zero),
+        ('extra.', 'sector', validate_to_none),
+        ('extra.destination.sector', 'dest_sector', validate_to_none),
+        ('extra.', 'public_source', validate_to_none),
+        ('extra.', 'start_time', validate_to_none),
+        ('extra.', 'end_time', validate_to_none),
+        ('extra.', 'client_version', validate_to_none),
+        ('destination.account', 'username', validate_to_none),
+        ('extra.', 'password', validate_to_none),
+        ('extra.', 'payload_url', validate_to_none),
+        ('extra.', 'payload_md5', validate_to_none),
+    ],
+    'constant_fields': {
+        'classification.taxonomy': 'intrusion attempts',
+        'classification.type': 'brute-force',
+    }
+}
+
+# https://www.shadowserver.org/wiki/pmwiki.php/Services/Open-HTTP
+open_http = {
+    'required_fields': [
+        ('time.source', 'timestamp', add_UTC_to_timestamp),
+        ('source.ip', 'ip'),
+        ('source.port', 'port'),
+    ],
+    'optional_fields': [
+        ('source.asn', 'asn'),
+        ('source.geolocation.cc', 'geo'),
+        ('source.geolocation.region', 'region'),
+        ('source.geolocation.city', 'city'),
+        ('protocol.transport', 'protocol'),
+        ('extra.','http'),
+        ('extra.','http_code'),
+        ('extra.','http_reason'),
+        ('extra.','content_type'),
+        ('extra.','conenction'),
+        ('extra.','www_authenticate'),
+        ('extra.','set_cookie'),
+        ('protocol.application','server'),
+        ('extra.','content_length'),
+        ('extra.','transfer_encoding'),
+        ('extra.','http_date'),
+        ('source.reverse_dns', 'hostname'),
+        ('classification.identifier', 'service'),
+        ('extra.', 'naics', invalidate_zero),
+        ('extra.', 'sic', invalidate_zero),
+    ],
+    'constant_fields': {
+        'classification.type': 'vulnerable service',
+        'classification.taxonomy': 'vulnerable',
+        'classification.identifier': 'open http',
     }
 }
