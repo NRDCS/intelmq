@@ -23,6 +23,7 @@ class SandboxParserBot(Bot):
         report = self.receive_message()
         raw_report = utils.base64_decode(report.get('raw'))
         sandbox_event = json.loads(raw_report)
+        self.logger.debug('Reading JSON report')
 
         if activity == 'network':
             # If one element when it is a list else a dictionary
@@ -93,6 +94,14 @@ class SandboxParserBot(Bot):
             if 'threat' in sandbox_event['analysis']['final']['business_threats']:
                 if 'display' in sandbox_event['analysis']['final']['business_threats']['threat']:
                     event.add('extra.business_threats', sandbox_event['analysis']['final']['business_threats']['threat']['display'])
+            if 'classification_tags' in sandbox_event['analysis']['final']:
+                if 'tag' in sandbox_event['analysis']['final']['classification_tags']:
+                    tag_list = []
+                    for value in sandbox_event['analysis']['final']['classification_tags']['tag']:
+                        tag_list.append(value['db'])
+                    event.add('extra.classification_tags', ",".join(tag_list))
+                    self.logger.debug('Tags extracted: %s', ",".join(tag_list))
+                
             event.add('malware.hash.md5', sandbox_event['analysis']['general']['digests']['md5'])
             event.add('malware.hash.sha1', sandbox_event['analysis']['general']['digests']['sha1'])
             event.add('malware.hash.sha256', sandbox_event['analysis']['general']['digests']['sha256'])
