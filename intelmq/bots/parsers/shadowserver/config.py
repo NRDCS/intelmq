@@ -42,6 +42,7 @@ TODOs:
 
 """
 import intelmq.lib.harmonization as harmonization
+import re
 
 
 def get_feed(feedname, logger):
@@ -202,7 +203,7 @@ def convert_http_host_and_url(value, row):
 
     return value
 
-	
+    
 def invalidate_zero(value):
     """ Returns an int or None for empty strings or '0'. """
     if not value:
@@ -464,9 +465,8 @@ ipv6_sinkhole_http_drone = {
     ],
     'constant_fields': {
         'classification.taxonomy': 'malicious code',
-        'classification.type': 'infected system',
-        # classification.identifier will be set to (harmonized) malware name by modify expert
-        # The feed does not include explicit information on the protocol
+        'classification.type': 'botnet drone',
+        'classification.identifier': 'infected system',
         # but since it is about HTTP the protocol is always set to 'tcp'.
         'protocol.transport': 'tcp',
     },
