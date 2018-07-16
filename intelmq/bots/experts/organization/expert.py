@@ -50,7 +50,7 @@ class OrganizationExpertBot(Bot):
             response = requests.post(api_url + '/api/organisations-search/by-ip/' + str(event['destination.ip']), data=json.dumps(req_body), headers=headers, verify=False)
             by_ip = response.json()
             if 'message' not in by_ip:
-                org_id = by_ip['data']['id']
+                org_id = by_ip['data'][0]['id']
                 # Query to get organisation name and sector using organisation ID
                 response = requests.post(api_url + '/api/organisations/' + str(org_id), data=json.dumps(req_body), headers=headers, verify=False)
                 data = response.json()
@@ -60,11 +60,14 @@ class OrganizationExpertBot(Bot):
                     event.add('destination.organization.id', data['data']['public_id'])
 
         if 'source.ip' in event and 'source.organization.name' not in event and 'source.organization.sector' not in event:
+            self.logger.debug('Searching for: %s.', str(event['source.ip']))
             req_body = {'user_name': api_user, 'password': api_pass}
             response = requests.post(api_url + '/api/organisations-search/by-ip/' + str(event['source.ip']), data=json.dumps(req_body), headers=headers, verify=False)
             by_ip = response.json()
-            if 'message' not in by_ip:
-                org_id = by_ip['data']['id']
+            self.logger.debug('Response JSON: %s.', response.text)
+            if 'message' not in by_ip and 'data' in by_ip and len(by_ip['data']) > 0:
+                self.logger.debug('Response JSON#0: %s.', str(by_ip['data'][0]))
+                org_id = by_ip['data'][0]['id']
                 response = requests.post(api_url + '/api/organisations/' + str(org_id), data=json.dumps(req_body), headers=headers, verify=False)
                 data = response.json()
                 if 'message' not in data:
