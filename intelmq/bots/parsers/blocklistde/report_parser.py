@@ -36,6 +36,7 @@ class BlocklistReportParserBot(Bot):
                 'dstport': 'Port: (?P<match>\S+)',
                 'url': 'Schema-URL: (?P<match>\S+)',
                 'attach': 'Attachment: (?P<match>.*)',
+                'service': 'Service: (?P<match>.*)',
                 'from': 'Reported-From: (?P<match>\S+)'
         }
         report=self.receive_message()
@@ -52,6 +53,8 @@ class BlocklistReportParserBot(Bot):
             if self.parse(re_map['srcip'], line): event.add('source.ip', self.parse(re_map['srcip'], line))
             if self.parse(re_map['dstport'], line): event.add('destination.port', self.parse(re_map['dstport'], line))
             if self.parse(re_map['url'], line): event.add('event_description.url', self.parse(re_map['url'], line))
+            if self.parse(re_map['service'], line): event.add('protocol.application', self.parse(re_map['service'], line))
+
         self.send_message(event)
         self.acknowledge_message()
 
