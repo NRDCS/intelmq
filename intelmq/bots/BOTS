@@ -84,7 +84,8 @@
                 "mail_user": "<user>",
                 "rate_limit": 60,
                 "subject_regex": "<subject>",
-                "line_regex": "<regex>"
+                "line_regex": "<regex>",
+                "single_message": false
             }
         },
 

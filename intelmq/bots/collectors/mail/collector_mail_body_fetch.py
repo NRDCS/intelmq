@@ -7,16 +7,17 @@ Takes all lines from the body which matches the regexp.
 Some software/hardware sents automatic reports with log 
 information in the body. The bot fetches such log lines.
 Parameters:
-	"feed": feed name
-	"provider": feed provider
-	"folder": mailbox folder
-	"mail_host": imap server
-	"mail_password": mail password
-	"mail_ssl": use IMAPS (true/false)
-	"mail_user": username
-	"rate_limit": mailbox check rate limit in sec.
-	"subject_regex": Subject regexp to look in mailbox
-	"line_regex": line regexp to look in the body
+    "feed": feed name
+    "provider": feed provider
+    "folder": mailbox folder
+    "mail_host": imap server
+    "mail_password": mail password
+    "mail_ssl": use IMAPS (true/false)
+    "mail_user": username
+    "rate_limit": mailbox check rate limit in sec.
+    "subject_regex": Subject regexp to look in mailbox
+    "line_regex": line regexp to look in the body
+    "single_message": false/true - to pass all line in one message or split by line
 
 """
 import re
@@ -58,7 +59,11 @@ class MailBodyFetchCollectorBot(CollectorBot):
         emails = mailbox.messages(folder=self.parameters.folder, unread=True,
                                   sent_to=getattr(self.parameters, "sent_to", None),
                                   sent_from=getattr(self.parameters, "sent_from", None))
-
+        if getattr (self.parameters, 'single_message', False):
+            single_message = self.parameters.single_message
+        else:
+            single_message = False
+        self.logger.debug("Parameter single message: %s", single_message)
         if emails:
             for uid, message in emails:
 
@@ -72,18 +77,29 @@ class MailBodyFetchCollectorBot(CollectorBot):
                 erroneous = False  # If errors occurred this will be set to true.
 
                 #self.logger.debug("Message keys %s.", ",".join(message.keys()))
+                report_lines = ""
 
                 for body in message.body['plain']:
                     for line in body.splitlines():
                         match = re.search(self.parameters.line_regex, str(line))
                         if match:
-                            line = match.group()
-                            # strip leading and trailing spaces, newlines and
-                            # carriage returns
-                            line = line.strip()
-                            report = self.new_report()
-                            report.add("raw", decode(line))
-                            self.send_message(report)
+                            if single_message:
+                                self.logger.debug("Reading line: %s", line)
+                                report_lines += line+"\n"
+                                
+                            else:
+                                line = match.group()
+                                # strip leading and trailing spaces, newlines and
+                                # carriage returns
+                                line = line.strip()
+                                report = self.new_report()
+                                report.add("raw", decode(line))
+                                self.send_message(report)
+                if single_message:
+                    self.logger.debug("Reporting lines: %s", report_lines)
+                    report = self.new_report()
+                    report.add("raw", report_lines)
+                    self.send_message(report)
 
                 try:
                     mailbox.mark_seen(uid)

@@ -29,7 +29,6 @@ class BlocklistReportParserBot(Bot):
             return sdate+"T00:00:00+00:00"
 
     def process(self):
-        f=open('/home/am/bot_output.txt','a')
 
         re_map={'date': 'Date: (?P<match>.*)',
                 'type': 'Report-Type: (?P<match>.*)',
