@@ -48,7 +48,7 @@ import re
 def get_feed(feedname, logger):
     # TODO should this be case insensitive?
     feed_idx = {
-		"Accessible-ADB": accessible_adb,
+        "Accessible-ADB": accessible_adb,
         "Accessible-Cisco-Smart-Install": accessible_cisco_smart_install,
         "Accessible-CWMP": accessible_cwmp,
         "Accessible-Hadoop": accessible_hadoop,
