@@ -48,6 +48,7 @@ import re
 def get_feed(feedname, logger):
     # TODO should this be case insensitive?
     feed_idx = {
+		"Accessible-ADB": accessible_adb,
         "Accessible-Cisco-Smart-Install": accessible_cisco_smart_install,
         "Accessible-CWMP": accessible_cwmp,
         "Accessible-Hadoop": accessible_hadoop,
@@ -1619,4 +1620,34 @@ open_http = {
         'classification.taxonomy': 'vulnerable',
         'classification.identifier': 'open http',
     }
+}
+
+# https://www.shadowserver.org/wiki/pmwiki.php/Services/Accessible-ADB
+accessible_adb = {
+    'required_fields': [
+        ('time.source', 'timestamp', add_UTC_to_timestamp),
+        ('source.ip', 'ip'),
+        ('source.port', 'port'),
+    ],
+    'optional_fields': [
+        ('protocol.transport', 'protocol'),
+        ('source.reverse_dns', 'hostname'),
+        # ('classification.identifier', 'tag'),  # always set to 'accessible-adb' in constant_fields
+        ('source.asn', 'asn'),
+        ('source.geolocation.cc', 'geo'),
+        ('source.geolocation.region', 'region'),
+        ('source.geolocation.city', 'city'),
+        ('extra.', 'naics', invalidate_zero),
+        ('extra.', 'sic', invalidate_zero),
+        ('extra.', 'name', validate_to_none),
+        ('extra.', 'model', validate_to_none),
+        ('extra.', 'device', validate_to_none),
+        ('extra.', 'features', validate_to_none),
+    ],
+    'constant_fields': {
+        'classification.taxonomy': 'vulnerable',
+        'classification.type': 'vulnerable service',
+        'classification.identifier': 'accessible-adb',
+        'protocol.application': 'adb',
+    },
 }
