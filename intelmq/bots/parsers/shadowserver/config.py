@@ -49,6 +49,7 @@ def get_feed(feedname, logger):
     # TODO should this be case insensitive?
     feed_idx = {
         "Accessible-ADB": accessible_adb,
+		"Accessible-AFP": accessible_afp,
         "Accessible-Cisco-Smart-Install": accessible_cisco_smart_install,
         "Accessible-CWMP": accessible_cwmp,
         "Accessible-Hadoop": accessible_hadoop,
@@ -62,6 +63,7 @@ def get_feed(feedname, logger):
         "Drone-Brute-Force": drone_brute_force,
         "Drone": drone,
         "DNS-Open-Resolvers": dns_open_resolvers,
+		"Darknet": darknet,
         "Microsoft-Sinkhole": microsoft_sinkhole,
         "NTP-Monitor": ntp_monitor,
         "NTP-Version": ntp_version,
@@ -1716,5 +1718,74 @@ accessible_rsync = {
         'classification.type': 'vulnerable service',
         'classification.identifier': 'accessible-rsync',
         'protocol.application': 'rsync',
+    },
+}
+# https://www.shadowserver.org/wiki/pmwiki.php/Services/Accessible-AFP
+accessible_afp = {
+    'required_fields': [
+        ('time.source', 'timestamp', add_UTC_to_timestamp),
+        ('source.ip', 'ip'),
+        ('source.port', 'port'),
+    ],
+    'optional_fields': [
+        ('protocol.transport', 'protocol'),
+        ('source.reverse_dns', 'hostname'),
+        # ('classification.identifier', 'tag'),  # always set to 'accessible-afp' in constant_fields
+        ('source.asn', 'asn'),
+        ('source.geolocation.cc', 'geo'),
+        ('source.geolocation.region', 'region'),
+        ('source.geolocation.city', 'city'),
+        ('extra.', 'naics', invalidate_zero),
+        ('extra.', 'sic', invalidate_zero),
+        ('extra.', 'machine_type', validate_to_none),
+        ('extra.', 'afp_versions', validate_to_none),
+        ('extra.', 'uams', validate_to_none),
+        ('extra.', 'flags', validate_to_none),
+        ('extra.', 'server_name', validate_to_none),
+        ('extra.', 'signature', validate_to_none),
+        ('extra.', 'directory_service', validate_to_none),
+        ('extra.', 'utf8_servername', validate_to_none),
+        ('extra.', 'network_address', validate_to_none),
+    ],
+    'constant_fields': {
+        'classification.taxonomy': 'vulnerable',
+        'classification.type': 'vulnerable service',
+        'classification.identifier': 'accessible-afp',
+        'protocol.application': 'afp',
+    },
+}
+
+# https://www.shadowserver.org/wiki/pmwiki.php/Services/Darknet
+darknet = {
+    'required_fields': [
+        ('time.source', 'timestamp', add_UTC_to_timestamp),
+        ('source.ip', 'ip'),
+    ],
+    'optional_fields': [
+        ('source.port', 'port'),
+        ('source.asn', 'asn'),
+        ('source.geolocation.cc', 'geo'),
+        ('source.geolocation.region', 'region'),
+        ('source.geolocation.city', 'city'),
+        ('source.reverse_dns', 'hostname'),
+        ('extra.', 'type', validate_to_none),
+        ('destination.ip', 'dst_ip', validate_ip),
+        ('destination.port', 'dst_port', convert_int),
+        ('destination.asn', 'dst_asn', convert_int),
+        ('destination.geolocation.cc', 'dst_geo'),
+        ('extra.', 'count', convert_int),
+        ('extra.', 'naics', invalidate_zero),
+        ('extra.', 'sic', invalidate_zero),
+        ('extra.destination.naics', 'dst_naics', invalidate_zero),
+        ('extra.destination.sic', 'dst_sic', invalidate_zero),
+        ('extra.', 'sector', validate_to_none),
+        ('extra.destination.sector', 'dst_sector', validate_to_none),
+        ('extra.', 'family', validate_to_none),
+        ('classification.identifier', 'tag'),  # different values possible in this report
+        ('extra.', 'public_source', validate_to_none),
+    ],
+    'constant_fields': {
+        'classification.taxonomy': 'other',
+        'classification.type': 'other',
     },
 }
